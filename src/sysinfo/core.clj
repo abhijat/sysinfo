@@ -69,4 +69,4 @@
 
 (defn -main
   [& args]
-  (dorun (map pprint/pprint (remove nil? (processes)))))
+  (dorun (map pprint/pprint (processes))))
