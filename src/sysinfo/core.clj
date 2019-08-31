@@ -59,11 +59,12 @@
          funcs [pid uid cmdline user-info mem-info]
          funcs (if show-env (conj funcs environ) funcs)
          ks [:pid :uid :cmdline :user-info :mem-info]
-         ks (if show-env (conj ks :env) ks)]
-     (for [pr process-list :when (not-empty (cmdline pr))]
-       (try
-         (zipmap ks (map #(% pr) funcs))
-         (catch Exception e nil)))))
+         ks (if show-env (conj ks :env) ks)
+         process-data (for [pr process-list :when (not-empty (cmdline pr))]
+                        (try
+                          (zipmap ks (map #(% pr) funcs))
+                          (catch Exception e nil)))]
+     (remove nil? process-data)))
   ([] (processes false)))
 
 (defn -main

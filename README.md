@@ -4,6 +4,14 @@ This is a clojure library to examine running processes and other system informat
 
 It exposes information from the /proc filesystem to the programming environment.
 
+The following fields are displayed per process at this time:
+
+1. process id
+2. user id
+3. user info (username, home directory, login shell)
+4. Memory stats (size, resident, shared, text, data)
+5. Command line for the process
+
 This is a work in progress, right now only the process interface is available.
 
 Some of the commands that can be executed from the repl are:
@@ -17,8 +25,12 @@ Some of the commands that can be executed from the repl are:
 3. Find all java processes
 `(filter #(re-find #"java" (:cmdline %)) (processes)`
 
-All of the processes can also show their environment variables. This is suppressed by default for both security and
-readability. It can be enabled by passing a truthy param to `processes`.
+4. See all running processes with their environment variables
+`(processes true`
+
+The processes can also display their environment variables. This is suppressed by default for both security and
+readability. 
+
 
 ## License
 
