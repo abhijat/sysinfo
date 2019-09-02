@@ -34,13 +34,12 @@
 
 ;; TODO accept port from command line
 (defn create-server
-  []
-
-  (let [port (Integer/parseInt (or (first *command-line-args*) 8890))]
+  [args]
+  (let [port (Integer/parseInt (or (first args) "8890"))]
     (http/create-server {::http/routes routes
                          ::http/type :jetty
                          ::http/port port})))
 
 (defn -main
   [& args]
-  (http/start (create-server)))
+  (http/start (create-server args)))
