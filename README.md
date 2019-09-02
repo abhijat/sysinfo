@@ -42,7 +42,9 @@ readability.
 ## Web server
 
 Executing the uberjar or `lein run` incantation on the command line starts a web server which shows running processes at `localhost:8890/ps`
-and individual processes as `localhost:8890/ps/<pid>` in JSON format.
+and individual processes as `localhost:8890/ps/<pid>` in JSON format. 
+
+The port can be changed by passing another port at the command line as the first argument.
 
 The process data shown on the web service always skips environment data.
 
