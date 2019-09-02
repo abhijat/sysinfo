@@ -1,72 +1,46 @@
 (ns sysinfo.core
-  (:require [clojure.java.io :as io]
-            [clojure.string :as s]
-            [clojure.pprint :as pprint])
+  (:require [io.pedestal.http :as http]
+            [io.pedestal.http.route :as route]
+            [clojure.data.json :as json]
+            [sysinfo.proc-parse :as proc])
   (:gen-class))
 
-(defn wrap-slurp [process-path leaf]
-  (slurp (java.io.FileReader. (str process-path "/" leaf))))
+(defn json-response
+  [status body]
+  {:status status
+   :headers {"Content-Type" "application/json"}
+   :body body})
 
-(defn replace-nulls [e]
-  (s/trim (s/replace e (char 0) \ )))
+(defn to-json-pretty
+  [content]
+  (with-out-str (json/pprint content)))
 
-(defn cmdline [process-path]
-  (replace-nulls (slurp (io/file process-path "cmdline"))))
+(def json-ok-response (partial json-response 200))
 
-(defn environ [process-path]
-  "Extracts a process's environment into a map, by splitting /proc/<pid>/environ on ="
-  (let [null-pattern (re-pattern (str (char 0)))
-        env (wrap-slurp process-path "environ")
-        env (s/split env null-pattern)
-        env (map #(s/split % #"=" 2) env)]
-    (into {} (for [[k v] env]
-               [(keyword k) v]))))
+(defn list-processes
+  [request]
+  (json-ok-response (to-json-pretty (proc/processes))))
 
-(defn mem-info [process-path]
-  (let [readings (map #(Long/parseLong %)
-                      (s/split (s/trim-newline (wrap-slurp process-path
-                                                           "statm"))
-                               #" "))
-        [size resident shared text _ data _] readings]
-    {:size size
-     :resident resident
-     :shared shared
-     :text text
-     :data data}))
+(defn show-process
+  [request]
+  (let [pid (get-in request [:path-params :pid])]
+    (println "serving request for" pid)
+    (json-ok-response (to-json-pretty (proc/show-process pid)))))
 
-(defn pid [process-path]
-  (Long/parseLong (last (s/split process-path #"/"))))
+(def routes
+  (route/expand-routes
+   #{["/ps" :get list-processes :route-name :ps]
+     ["/ps/:pid" :get show-process :route-name :pid]}))
 
-(defn uid [process-path]
-  (Long/parseLong (wrap-slurp process-path "loginuid")))
+;; TODO accept port from command line
+(defn create-server
+  []
 
-(defn user-info [process-path]
-  (let [user-id (str (uid process-path))
-        rows (s/split-lines (slurp "/etc/passwd"))
-        users (map #(s/split % #":") rows)
-        user-row (first (filter #(= user-id (nth % 2))
-                                users))
-        [name _ _ _ _ home shell] user-row]
-    {:name name
-     :home home
-     :shell shell}))
-
-(defn processes
-  ([show-env]
-   (let [process-list (filter #(re-matches #"/proc/[0-9]+" %)
-                              (map #(.getPath %)
-                                   (.listFiles (io/file "/proc"))))
-         funcs [pid uid cmdline user-info mem-info]
-         funcs (if show-env (conj funcs environ) funcs)
-         ks [:pid :uid :cmdline :user-info :mem-info]
-         ks (if show-env (conj ks :env) ks)
-         process-data (for [pr process-list :when (not-empty (cmdline pr))]
-                        (try
-                          (zipmap ks (map #(% pr) funcs))
-                          (catch Exception e nil)))]
-     (remove nil? process-data)))
-  ([] (processes false)))
+  (let [port (Integer/parseInt (or (first *command-line-args*) 8890))]
+    (http/create-server {::http/routes routes
+                         ::http/type :jetty
+                         ::http/port port})))
 
 (defn -main
   [& args]
-  (dorun (map pprint/pprint (processes))))
+  (http/start (create-server)))
