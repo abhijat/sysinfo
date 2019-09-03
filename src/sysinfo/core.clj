@@ -21,6 +21,10 @@
   [request]
   (json-ok-response (to-json-pretty (proc/processes))))
 
+(defn cpu-info
+  [request]
+  (json-ok-response (to-json-pretty (proc/cpu-info))))
+
 (defn show-process
   [request]
   (let [pid (get-in request [:path-params :pid])]
@@ -30,7 +34,8 @@
 (def routes
   (route/expand-routes
    #{["/ps" :get list-processes :route-name :ps]
-     ["/ps/:pid" :get show-process :route-name :pid]}))
+     ["/ps/:pid" :get show-process :route-name :pid]
+     ["/cpu" :get cpu-info :route-name :cpu]}))
 
 ;; TODO accept port from command line
 (defn create-server
