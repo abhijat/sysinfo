@@ -37,6 +37,8 @@ Some of the commands that can be executed from the repl are:
 `(proc/processes true)`
 
 5. See information about the CPU
+
+
 `(proc/cpu-info)`
 
 The processes can also display their environment variables. This is suppressed by default for both security and
