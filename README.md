@@ -12,7 +12,7 @@ The following fields are displayed per process at this time:
 4. Memory stats (size, resident, shared, text, data)
 5. Command line for the process
 
-This is a work in progress, right now only the process interface is available.
+This is a work in progress, right now only the process and CPU interface is available.
 
 Some of the commands that can be executed from the repl are:
 
@@ -35,6 +35,9 @@ Some of the commands that can be executed from the repl are:
 
 
 `(proc/processes true)`
+
+5. See information about the CPU
+`(proc/cpu-info)`
 
 The processes can also display their environment variables. This is suppressed by default for both security and
 readability. 
