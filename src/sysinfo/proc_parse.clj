@@ -54,6 +54,7 @@
 (def function-names [:pid :uid :cmdline :user-info :mem-info])
 
 (defn process-info
+  "Given the path to a process's data, returns the process information map"
   ([path] (process-info path false))
   ([path show-env]
    (let [functions (if show-env (conj functions environ) functions)
@@ -68,12 +69,15 @@
     (if (.exists path-obj) (.getPath path-obj) nil)))
 
 (defn show-process
+  "Given a pid, returns the process information map"
   ([pid] (show-process pid false))
   ([pid show-env]
    (when-let [path (path-for-pid pid)]
      (process-info path))))
 
 (defn processes
+  "Returns all of the processes which are readable by the executing user,
+  except those whose cmdline is empty"
   ([show-env]
    (let [process-list (filter #(re-matches #"/proc/[0-9]+" %)
                               (map #(.getPath %)
@@ -83,3 +87,23 @@
                         (process-info pr show-env))]
      (remove nil? process-data)))
   ([] (processes false)))
+
+(defn first-row-with [pred rows]
+  (some (fn [row]
+          (when (pred row) row))
+        rows))
+
+(defn get-val [row]
+  (s/trim (last (s/split row #":"))))
+
+(defn cpu-info []
+  (let [data (slurp (java.io.FileReader. "/proc/cpuinfo"))
+        rows (s/split-lines data)]
+    (letfn [(getkey [k]
+              (get-val (first-row-with #(s/starts-with? % k)
+                                       rows)))]
+      {:cpu-count (count (filter #(s/starts-with? % "processor") rows))
+       :vendor-id (getkey "vendor_id")
+       :model-name (getkey "model name")
+       :flags (getkey "flags")
+       :cache-size (getkey "cache size")})))
